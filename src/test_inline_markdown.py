@@ -1,7 +1,7 @@
 from inline_markdown import split_nodes_delimiter
 import unittest
 from textnode import TextNode, TextType
-from inline_markdown import extract_markdown_images, extract_markdown_links, split_nodes_image, split_nodes_link
+from inline_markdown import extract_markdown_images, extract_markdown_links, split_nodes_image, split_nodes_link, text_to_textnodes
 
 class TestInlineMarkdown(unittest.TestCase):
     def test_split_nodes_delimiter(self):
@@ -53,3 +53,40 @@ class TestMarkdownExtraction(unittest.TestCase):
         matches = extract_markdown_images(text)
         expected = [("alt", "url")]
         self.assertListEqual(expected, matches)
+
+    def test_split_nodes_image(self):
+        nodes = [TextNode("This is an image ![alt](url) in text", TextType.TEXT)]
+        new_nodes = split_nodes_image(nodes)
+        
+        self.assertEqual(len(new_nodes), 3)
+        self.assertEqual(new_nodes[0].text, "This is an image ")
+        self.assertEqual(new_nodes[0].text_type, TextType.TEXT)
+        self.assertEqual(new_nodes[1].text, "alt")
+        self.assertEqual(new_nodes[1].text_type, TextType.IMAGE)
+        self.assertEqual(new_nodes[1].url, "url")
+        self.assertEqual(new_nodes[2].text, " in text")
+        self.assertEqual(new_nodes[2].text_type, TextType.TEXT)
+    
+    def test_split_nodes_link(self):
+        nodes = [TextNode("This is a link [anchor](url) in text", TextType.TEXT)]
+        new_nodes = split_nodes_link(nodes)
+        
+        self.assertEqual(len(new_nodes), 3)
+        self.assertEqual(new_nodes[0].text, "This is a link ")
+        self.assertEqual(new_nodes[0].text_type, TextType.TEXT)
+        self.assertEqual(new_nodes[1].text, "anchor")
+        self.assertEqual(new_nodes[1].text_type, TextType.LINK)
+        self.assertEqual(new_nodes[1].url, "url")
+        self.assertEqual(new_nodes[2].text, " in text")
+        self.assertEqual(new_nodes[2].text_type, TextType.TEXT)
+
+    def test_text_to_textnodes(self):
+        text = "This is a simple text"
+        nodes = text_to_textnodes(text)
+        
+        self.assertEqual(len(nodes), 1)
+        self.assertEqual(nodes[0].text, text)
+        self.assertEqual(nodes[0].text_type, TextType.TEXT)
+
+if __name__ == "__main__":
+    unittest.main()

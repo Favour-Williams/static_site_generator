@@ -41,28 +41,25 @@ def split_nodes_image(old_nodes):
             new_nodes.append(node)
             continue
             
-        matches = extract_markdown_images(node.text)
-        if not matches:
+        original_text = node.text
+        images = extract_markdown_images(original_text)
+        if len(images) == 0:
             new_nodes.append(node)
             continue
-        
-        last_index = 0
-        for alt, url in matches:
-            start_index = node.text.find(f"![{alt}]({url})", last_index)
-            if start_index == -1:
-                continue
             
-            if start_index > last_index:
-                new_nodes.append(TextNode(node.text[last_index:start_index], TextType.TEXT))
+        for image_alt, image_url in images:
+            sections = original_text.split(f"![{image_alt}]({image_url})", 1)
+            if len(sections) != 2:
+                raise ValueError("Invalid markdown, image section not closed")
+            if sections[0] != "":
+                new_nodes.append(TextNode(sections[0], TextType.TEXT))
+            new_nodes.append(TextNode(image_alt, TextType.IMAGE, image_url))
+            original_text = sections[1]
             
-            new_nodes.append(TextNode(alt, TextType.IMAGE, url))
-            last_index = start_index + len(f"![{alt}]({url})")
-        
-        if last_index < len(node.text):
-            new_nodes.append(TextNode(node.text[last_index:], TextType.TEXT))
-    
+        if original_text != "":
+            new_nodes.append(TextNode(original_text, TextType.TEXT))
+            
     return new_nodes
-
 
 def split_nodes_link(old_nodes):
     new_nodes = []
@@ -71,24 +68,27 @@ def split_nodes_link(old_nodes):
             new_nodes.append(node)
             continue
             
-        matches = extract_markdown_links(node.text)
-        if not matches:
+        original_text = node.text
+        links = extract_markdown_links(original_text)
+        if len(links) == 0:
             new_nodes.append(node)
             continue
-        
-        last_index = 0
-        for anchor, url in matches:
-            start_index = node.text.find(f"[{anchor}]({url})", last_index)
-            if start_index == -1:
-                continue
             
-            if start_index > last_index:
-                new_nodes.append(TextNode(node.text[last_index:start_index], TextType.TEXT))
+        for link_text, link_url in links:
+            sections = original_text.split(f"[{link_text}]({link_url})", 1)
+            if len(sections) != 2:
+                raise ValueError("Invalid markdown, link section not closed")
+            if sections[0] != "":
+                new_nodes.append(TextNode(sections[0], TextType.TEXT))
+            new_nodes.append(TextNode(link_text, TextType.LINK, link_url))
+            original_text = sections[1]
             
-            new_nodes.append(TextNode(anchor, TextType.LINK, url))
-            last_index = start_index + len(f"[{anchor}]({url})")
-        
-        if last_index < len(node.text):
-            new_nodes.append(TextNode(node.text[last_index:], TextType.TEXT))
-    
+        if original_text != "":
+            new_nodes.append(TextNode(original_text, TextType.TEXT))
+            
     return new_nodes
+
+
+def text_to_textnodes(text):
+    return [TextNode(text, TextType.TEXT)]
+    
