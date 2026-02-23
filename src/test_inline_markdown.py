@@ -2,6 +2,7 @@ from inline_markdown import split_nodes_delimiter
 import unittest
 from textnode import TextNode, TextType
 from inline_markdown import extract_markdown_images, extract_markdown_links, split_nodes_image, split_nodes_link, text_to_textnodes
+from markdown_blocks import markdown_to_blocks
 
 class TestInlineMarkdown(unittest.TestCase):
     def test_split_nodes_delimiter(self):
@@ -87,6 +88,50 @@ class TestMarkdownExtraction(unittest.TestCase):
         self.assertEqual(len(nodes), 1)
         self.assertEqual(nodes[0].text, text)
         self.assertEqual(nodes[0].text_type, TextType.TEXT)
+
+
+class TestMarkdownToBlocks(unittest.TestCase):
+    def test_markdown_to_blocks(self):
+        md = """
+This is **bolded** paragraph
+
+This is another paragraph with _italic_ text and `code` here
+This is the same paragraph on a new line
+
+- This is a list
+- with items
+"""
+        blocks = markdown_to_blocks(md)
+        self.assertEqual(
+            blocks,
+            [
+                "This is **bolded** paragraph",
+                "This is another paragraph with _italic_ text and `code` here\nThis is the same paragraph on a new line",
+                "- This is a list\n- with items",
+            ],
+        )
+
+    def test_markdown_to_blocks_newlines(self):
+        md = """
+# This is a heading
+
+
+This is a paragraph with too many newlines.
+
+
+- List item
+"""
+        blocks = markdown_to_blocks(md)
+        self.assertEqual(
+            blocks,
+            [
+                "# This is a heading",
+                "This is a paragraph with too many newlines.",
+                "- List item",
+            ],
+        )
+
+
 
 if __name__ == "__main__":
     unittest.main()
